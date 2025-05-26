@@ -21,11 +21,16 @@ def tts():
         if not text.strip():
             return jsonify({"error": "Text is required"}), 400
 
-        # Set accent using tld based on selected voice
-        if voice == "meera":
-            tld = "co.uk"  # British accent
-        else:
-            tld = "co.in"  # Default to Indian accent
+        # Map each voice to a gTTS-supported TLD
+        tld_map = {
+            "maya": "co.in",      # Indian
+            "meera": "co.uk",     # British
+            "melody": "com",      # American
+            "mia": "com.au",      # Australian
+            "marie": "ca"         # Canadian
+        }
+
+        tld = tld_map.get(voice, "co.in")  # fallback to Maya's accent
 
         # Generate speech
         tts = gTTS(text=text, lang="en", tld=tld)
