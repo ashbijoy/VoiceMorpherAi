@@ -50,7 +50,7 @@ export function TTSSection() {
       });
       return;
     }
-  
+
     if (!selectedVoice) {
       toast({
         title: "Please select a voice",
@@ -59,34 +59,52 @@ export function TTSSection() {
       });
       return;
     }
-  
+
     setIsLoading(true);
-  
+
     try {
-      const response = await fetch (`${process.env.NEXT_PUBLIC_BACKEND_URL}/tts`,{  
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/tts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, voice: selectedVoice }),
       });
-  
+
       if (!response.ok) throw new Error("Failed to generate speech");
-  
+
       const blob = await response.blob();
+      console.log("Blob size:", blob.size);
+
+      if (blob.size === 0) {
+        throw new Error("Received empty audio file");
+      }
+
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-  
-      setIsLoading(false);
+
       setIsPlaying(true);
-      await audio.play();
-  
-      toast({
-        title: "Speech Generated!",
-        description: `Playing with ${voices.find((v) => v.id === selectedVoice)?.name} voice`,
-      });
-  
+      setIsLoading(false);
+
       audio.onended = () => {
         setIsPlaying(false);
+        URL.revokeObjectURL(url);
       };
+
+      try {
+        await audio.play();
+        toast({
+          title: "Speech Generated!",
+          description: `Playing with ${voices.find((v) => v.id === selectedVoice)?.name} voice`,
+        });
+      } catch (playErr) {
+        console.error("Browser blocked audio.play():", playErr);
+        toast({
+          title: "Playback Blocked",
+          description: "Browser blocked audio autoplay. Try tapping again.",
+          variant: "destructive",
+        });
+        setIsPlaying(false);
+      }
+
     } catch (error) {
       console.error("Playback error:", error);
       toast({
@@ -100,7 +118,7 @@ export function TTSSection() {
   };
 
   const handleStop = () => {
-    setIsPlaying(false)
+    setIsPlaying(false);
   }
 
   const selectedVoiceData = voices.find((v) => v.id === selectedVoice)
@@ -114,7 +132,6 @@ export function TTSSection() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Text Input */}
         <div className="space-y-2">
           <Label htmlFor="text-input" className="text-sm font-medium">
             Enter your text
@@ -133,31 +150,27 @@ export function TTSSection() {
           </div>
         </div>
 
-        {/* Voice and Accent Selection */}
         <div className="space-y-2">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Select Voice</Label>
-            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Choose a voice" />
-              </SelectTrigger>
-              <SelectContent>
-                {voices.map((voice) => (
-                  <SelectItem key={voice.id} value={voice.id}>
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{voice.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {voice.gender} • {voice.description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Label className="text-sm font-medium">Select Voice</Label>
+          <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="Choose a voice" />
+            </SelectTrigger>
+            <SelectContent>
+              {voices.map((voice) => (
+                <SelectItem key={voice.id} value={voice.id}>
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">{voice.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {voice.gender} • {voice.description}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Voice Preview */}
         {selectedVoiceData && (
           <div className="p-4 bg-muted/50 rounded-lg border">
             <div className="flex items-center gap-3">
@@ -172,7 +185,6 @@ export function TTSSection() {
           </div>
         )}
 
-        {/* Controls */}
         <div className="flex gap-3 pt-2">
           <Button
             onClick={handlePlay}
