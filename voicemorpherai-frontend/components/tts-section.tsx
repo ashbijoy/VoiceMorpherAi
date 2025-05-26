@@ -32,7 +32,28 @@ const voices: Voice[] = [
     accent: "British",
     description: "Elegant and calm British female voice",
   },
-]
+  {
+    id: "melody",
+    name: "Melody",
+    gender: "Female",
+    accent: "American",
+    description: "Friendly and clear American voice",
+  },
+  {
+    id: "mia",
+    name: "Mia",
+    gender: "Female",
+    accent: "Australian",
+    description: "Bright and energetic Aussie voice",
+  },
+  {
+    id: "marie",
+    name: "Marie",
+    gender: "Female",
+    accent: "French-Canadian",
+    description: "Smooth and soft French-English voice",
+  },
+];
 
 export function TTSSection() {
   const [text, setText] = useState("")
