@@ -16,13 +16,19 @@ def tts():
     try:
         data = request.get_json()
         text = data.get("text", "")
-        voice = data.get("voice", "manu")
+        voice = data.get("voice", "maya")
 
         if not text.strip():
             return jsonify({"error": "Text is required"}), 400
 
-        # Remove tld for now — just use default gTTS config
-        tts = gTTS(text=text, lang="en")
+        # Set accent using tld based on selected voice
+        if voice == "meera":
+            tld = "co.uk"  # British accent
+        else:
+            tld = "co.in"  # Default to Indian accent
+
+        # Generate speech
+        tts = gTTS(text=text, lang="en", tld=tld)
         temp_path = "/tmp/voicemorpher_tts.mp3"
         tts.save(temp_path)
 
@@ -33,7 +39,7 @@ def tts():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
