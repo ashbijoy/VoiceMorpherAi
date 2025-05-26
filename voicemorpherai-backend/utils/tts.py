@@ -6,20 +6,16 @@ import os
 def generate_tts(text, voice_name):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
+    engine.setProperty('voice', voices[1].id if voice_name.lower() == 'maya' and len(voices) > 1 else voices[0].id)
 
-    if voice_name.lower() == 'maya':
-        engine.setProperty('voice', voices[1].id if len(voices) > 1 else voices[0].id)
-    else:
-        engine.setProperty('voice', voices[0].id)
+    filename = f"tts_{uuid.uuid4().hex}.mp3"
+    wav_filename = filename.replace(".mp3", ".wav")
 
-    temp_mp3 = f"tts_{uuid.uuid4().hex}.mp3"
-    temp_wav = temp_mp3.replace(".mp3", ".wav")
-
-    engine.save_to_file(text, temp_mp3)
+    engine.save_to_file(text, filename)
     engine.runAndWait()
 
-    sound = AudioSegment.from_mp3(temp_mp3)
-    sound.export(temp_wav, format="wav")
-    os.remove(temp_mp3)
+    sound = AudioSegment.from_file(filename)
+    sound.export(wav_filename, format="wav")
+    os.remove(filename)
 
-    return temp_wav
+    return wav_filename
