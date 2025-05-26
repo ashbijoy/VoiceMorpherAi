@@ -19,15 +19,11 @@ def tts():
         if not text.strip():
             return jsonify({"error": "Text is required"}), 400
 
-        # Select accent
-        tld = "in" if voice == "maya" else "us"
-
-        # Save to temp file first
-        tts = gTTS(text=text, lang="en", tld=tld)
+        # Remove tld for now — just use default gTTS config
+        tts = gTTS(text=text, lang="en")
         temp_path = "/tmp/voicemorpher_tts.mp3"
         tts.save(temp_path)
 
-        # Read file into memory buffer
         with open(temp_path, "rb") as f:
             audio_data = io.BytesIO(f.read())
 
@@ -35,7 +31,7 @@ def tts():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
