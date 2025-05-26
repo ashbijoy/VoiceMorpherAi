@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -62,21 +63,41 @@ export function TTSSection() {
 
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      setIsPlaying(true)
-
-      toast({
-        title: "Audio generated successfully!",
-        description: `Playing with ${voices.find((v) => v.id === selectedVoice)?.name} voice`,
+    try {
+      const response = await fetch(\`\${process.env.NEXT_PUBLIC_BACKEND_URL}/tts\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, voice: selectedVoice }),
       })
 
-      // Simulate audio playback
-      setTimeout(() => {
+      if (!response.ok) throw new Error("Failed to fetch audio")
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+
+      setIsPlaying(true)
+      setIsLoading(false)
+      await audio.play()
+
+      toast({
+        title: "Speech Generated!",
+        description: \`Playing with \${voices.find((v) => v.id === selectedVoice)?.name} voice\`,
+      })
+
+      audio.onended = () => {
         setIsPlaying(false)
-      }, 3000)
-    }, 2000)
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      setIsPlaying(false)
+      setIsLoading(false)
+      toast({
+        title: "Playback Error",
+        description: "Something went wrong with the audio",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleStop = () => {
@@ -94,7 +115,6 @@ export function TTSSection() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Text Input */}
         <div className="space-y-2">
           <Label htmlFor="text-input" className="text-sm font-medium">
             Enter your text
@@ -113,31 +133,27 @@ export function TTSSection() {
           </div>
         </div>
 
-        {/* Voice and Accent Selection */}
         <div className="space-y-2">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Select Voice</Label>
-            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Choose a voice" />
-              </SelectTrigger>
-              <SelectContent>
-                {voices.map((voice) => (
-                  <SelectItem key={voice.id} value={voice.id}>
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{voice.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {voice.gender} • {voice.description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Label className="text-sm font-medium">Select Voice</Label>
+          <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="Choose a voice" />
+            </SelectTrigger>
+            <SelectContent>
+              {voices.map((voice) => (
+                <SelectItem key={voice.id} value={voice.id}>
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">{voice.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {voice.gender} • {voice.description}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Voice Preview */}
         {selectedVoiceData && (
           <div className="p-4 bg-muted/50 rounded-lg border">
             <div className="flex items-center gap-3">
@@ -152,7 +168,6 @@ export function TTSSection() {
           </div>
         )}
 
-        {/* Controls */}
         <div className="flex gap-3 pt-2">
           <Button
             onClick={handlePlay}
