@@ -63,7 +63,7 @@ export function TTSSection() {
     setIsLoading(true);
   
     try {
-      const response = await fetch ('${process.env.NEXT_PUBLIC_BACKEND_URL}/tts',{  
+      const response = await fetch (`${process.env.NEXT_PUBLIC_BACKEND_URL}/tts`,{  
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, voice: selectedVoice }),
