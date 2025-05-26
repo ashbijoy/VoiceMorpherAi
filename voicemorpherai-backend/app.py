@@ -1,9 +1,11 @@
 from flask import Flask, request, send_file, jsonify
+from flask_cors import CORS  
 from gtts import gTTS
 import os
 import io
 
 app = Flask(__name__)
+CORS(app)  # ✅ Enable CORS for all routes
 
 @app.route("/")
 def home():
