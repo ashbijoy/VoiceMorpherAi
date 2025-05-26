@@ -1,0 +1,4 @@
+flask
+flask_cors
+pyttsx3
+pydub
