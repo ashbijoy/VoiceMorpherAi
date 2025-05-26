@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -48,57 +47,57 @@ export function TTSSection() {
         title: "Please enter some text",
         description: "Add text to convert to speech",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+  
     if (!selectedVoice) {
       toast({
         title: "Please select a voice",
         description: "Choose Maya or Manu to continue",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
-    setIsLoading(true)
-
+  
+    setIsLoading(true);
+  
     try {
-      const response = await fetch(\`\${process.env.NEXT_PUBLIC_BACKEND_URL}/tts\`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/tts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, voice: selectedVoice }),
-      })
-
-      if (!response.ok) throw new Error("Failed to fetch audio")
-
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-
-      setIsPlaying(true)
-      setIsLoading(false)
-      await audio.play()
-
+      });
+  
+      if (!response.ok) throw new Error("Failed to generate speech");
+  
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+  
+      setIsLoading(false);
+      setIsPlaying(true);
+      await audio.play();
+  
       toast({
         title: "Speech Generated!",
-        description: \`Playing with \${voices.find((v) => v.id === selectedVoice)?.name} voice\`,
-      })
-
+        description: `Playing with ${voices.find((v) => v.id === selectedVoice)?.name} voice`,
+      });
+  
       audio.onended = () => {
-        setIsPlaying(false)
-      }
+        setIsPlaying(false);
+      };
     } catch (error) {
-      console.error("Error:", error)
-      setIsPlaying(false)
-      setIsLoading(false)
+      console.error("Playback error:", error);
       toast({
         title: "Playback Error",
-        description: "Something went wrong with the audio",
+        description: "Something went wrong while playing the audio",
         variant: "destructive",
-      })
+      });
+      setIsLoading(false);
+      setIsPlaying(false);
     }
-  }
+  };
 
   const handleStop = () => {
     setIsPlaying(false)
@@ -115,6 +114,7 @@ export function TTSSection() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Text Input */}
         <div className="space-y-2">
           <Label htmlFor="text-input" className="text-sm font-medium">
             Enter your text
@@ -133,27 +133,31 @@ export function TTSSection() {
           </div>
         </div>
 
+        {/* Voice and Accent Selection */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Select Voice</Label>
-          <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-            <SelectTrigger className="h-12">
-              <SelectValue placeholder="Choose a voice" />
-            </SelectTrigger>
-            <SelectContent>
-              {voices.map((voice) => (
-                <SelectItem key={voice.id} value={voice.id}>
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">{voice.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {voice.gender} • {voice.description}
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Select Voice</Label>
+            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Choose a voice" />
+              </SelectTrigger>
+              <SelectContent>
+                {voices.map((voice) => (
+                  <SelectItem key={voice.id} value={voice.id}>
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{voice.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {voice.gender} • {voice.description}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
+        {/* Voice Preview */}
         {selectedVoiceData && (
           <div className="p-4 bg-muted/50 rounded-lg border">
             <div className="flex items-center gap-3">
@@ -168,6 +172,7 @@ export function TTSSection() {
           </div>
         )}
 
+        {/* Controls */}
         <div className="flex gap-3 pt-2">
           <Button
             onClick={handlePlay}
