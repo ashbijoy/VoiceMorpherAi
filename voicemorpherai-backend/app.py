@@ -1,61 +1,52 @@
-from flask import Flask, request, send_file, after_this_request
-from flask_cors import CORS
+from flask import Flask, request, send_file, jsonify
+import pyttsx3
+import io
 import os
-import logging
-from utils.tts import generate_tts
-from utils.voice_clone import generate_voice_clone
+from pydub import AudioSegment
 
 app = Flask(__name__)
-CORS(app, origins="*")
-
-logging.basicConfig(level=logging.INFO)
 
 @app.route("/")
-def home():
-    return "VoiceMorpherAI Backend is live!", 200
+def index():
+    return jsonify({"status": "VoiceMorpherAI backend is running."})
 
 @app.route("/tts", methods=["POST"])
 def tts():
-    data = request.json
-    text = data.get("text")
-    voice = data.get("voice")
-    if not text or not voice:
-        return {"error": "Missing 'text' or 'voice'"}, 400
+    try:
+        data = request.get_json()
+        text = data.get("text", "")
+        voice = data.get("voice", "manu")
 
-    app.logger.info(f"TTS Request - Voice: {voice}, Text: {text}")
-    output_path = generate_tts(text, voice)
+        if not text.strip():
+            return jsonify({"error": "Text is required"}), 400
 
-    @after_this_request
-    def cleanup(response):
-        try:
-            os.remove(output_path)
-        except Exception as e:
-            app.logger.warning(f"Failed to delete temp file: {e}")
-        return response
+        engine = pyttsx3.init()
+        voices = engine.getProperty("voices")
 
-    return send_file(output_path, mimetype="audio/wav")
+        # Voice selection logic (modify indexes if needed)
+        if voice == "maya":
+            engine.setProperty("voice", voices[1].id)  # female
+        else:
+            engine.setProperty("voice", voices[0].id)  # male
 
-@app.route("/clone", methods=["POST"])
-def clone():
-    if 'audio' not in request.files or 'text' not in request.form:
-        return {"error": "Missing audio or text"}, 400
+        # Save to temporary WAV file
+        temp_wav_path = "temp_audio.wav"
+        engine.save_to_file(text, temp_wav_path)
+        engine.runAndWait()
 
-    audio = request.files['audio']
-    text = request.form['text']
+        # Convert WAV to MP3 in-memory
+        sound = AudioSegment.from_wav(temp_wav_path)
+        buffer = io.BytesIO()
+        sound.export(buffer, format="mp3")
+        buffer.seek(0)
 
-    app.logger.info("Voice cloning request received (simulated)")
-    output_path = generate_voice_clone(audio, text)
+        # Clean up the temp file
+        os.remove(temp_wav_path)
 
-    @after_this_request
-    def cleanup(response):
-        try:
-            os.remove(output_path)
-        except Exception as e:
-            app.logger.warning(f"Failed to delete temp file: {e}")
-        return response
+        return send_file(buffer, mimetype="audio/mpeg")
 
-    return send_file(output_path, mimetype="audio/wav")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(debug=True)
