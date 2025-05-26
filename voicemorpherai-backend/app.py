@@ -1,14 +1,20 @@
 from flask import Flask, request, send_file, jsonify
-import pyttsx3
+import requests
 import io
 import os
-from pydub import AudioSegment
 
 app = Flask(__name__)
 
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")  # Store in env var for safety
+
+voice_map = {
+    "maya": "EXAVITQu4vr4xnSDxMaL",  # Replace with your female voice ID
+    "manu": "TxGEqnHWrfWFTfGW9XjX",  # Replace with your male voice ID
+}
+
 @app.route("/")
-def index():
-    return jsonify({"status": "VoiceMorpherAI backend is running."})
+def home():
+    return jsonify({"status": "VoiceMorpherAI ElevenLabs backend running ✅"})
 
 @app.route("/tts", methods=["POST"])
 def tts():
@@ -20,30 +26,36 @@ def tts():
         if not text.strip():
             return jsonify({"error": "Text is required"}), 400
 
-        engine = pyttsx3.init()
-        voices = engine.getProperty("voices")
+        voice_id = voice_map.get(voice.lower())
+        if not voice_id:
+            return jsonify({"error": "Invalid voice selection"}), 400
 
-        # Voice selection logic (modify indexes if needed)
-        if voice == "maya":
-            engine.setProperty("voice", voices[1].id)  # female
-        else:
-            engine.setProperty("voice", voices[0].id)  # male
+        headers = {
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json"
+        }
 
-        # Save to temporary WAV file
-        temp_wav_path = "temp_audio.wav"
-        engine.save_to_file(text, temp_wav_path)
-        engine.runAndWait()
+        payload = {
+            "text": text,
+            "model_id": "eleven_monolingual_v1",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.75
+            }
+        }
 
-        # Convert WAV to MP3 in-memory
-        sound = AudioSegment.from_wav(temp_wav_path)
-        buffer = io.BytesIO()
-        sound.export(buffer, format="mp3")
-        buffer.seek(0)
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
+        response = requests.post(url, json=payload, headers=headers, stream=True)
 
-        # Clean up the temp file
-        os.remove(temp_wav_path)
+        if response.status_code != 200:
+            return jsonify({"error": "ElevenLabs error", "details": response.json()}), 500
 
-        return send_file(buffer, mimetype="audio/mpeg")
+        # Send the audio as a stream
+        return send_file(
+            io.BytesIO(response.content),
+            mimetype="audio/mpeg",
+            download_name="speech.mp3"
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
