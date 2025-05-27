@@ -1,15 +1,20 @@
 from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS  
 from gtts import gTTS
+from TTS.api import TTS
 import os
 import io
+import tempfile
 
 app = Flask(__name__)
 CORS(app)  # ✅ Enable CORS for all routes
 
+# Initialize Coqui TTS model once for cloning
+voice_cloner = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", progress_bar=False, gpu=False)
+
 @app.route("/")
 def home():
-    return jsonify({"status": "VoiceMorpherAI backend (gTTS) is live ✅"})
+    return jsonify({"status": "VoiceMorpherAI backend is live ✅"})
 
 @app.route("/tts", methods=["POST"])
 def tts():
@@ -45,6 +50,41 @@ def tts():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/clone", methods=["POST"])
+def clone():
+    try:
+        if "audio" not in request.files or "text" not in request.form:
+            return jsonify({"error": "Audio file and text are required"}), 400
+
+        audio_file = request.files["audio"]
+        text = request.form["text"]
+
+        # Save uploaded audio temporarily
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            speaker_wav_path = tmp.name
+            audio_file.save(speaker_wav_path)
+
+        output_path = os.path.join(tempfile.gettempdir(), "cloned_output.wav")
+
+        # Generate cloned voice audio
+        voice_cloner.tts_to_file(
+            text=text,
+            speaker_wav=speaker_wav_path,
+            language="en",
+            file_path=output_path
+        )
+
+        with open(output_path, "rb") as f:
+            return send_file(
+                io.BytesIO(f.read()),
+                mimetype="audio/wav",
+                download_name="cloned.wav"
+            )
+
+    except Exception as e:
+        print("Voice clone error:", e)
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=5050, debug=True)

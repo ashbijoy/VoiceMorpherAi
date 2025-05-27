@@ -1,0 +1,37 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Coqui or TTS cache and model files
+TTS/
+tts_models/
+.cache/
+*.pth
+*.pt
+*.ckpt
+
+# Audio files
+*.mp3
+*.wav
+
+# Mac system files
+.DS_Store
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
+
+# Jupyter and IPython stuff
+.ipynb_checkpoints/
+
+# Build outputs
+build/
+dist/
