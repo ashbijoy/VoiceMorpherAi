@@ -23,7 +23,7 @@ const voices: Voice[] = [
     name: "Maya",
     gender: "Female",
     accent: "Indian",
-    description: "Warm and professional female voice",
+    description: "Warm and professional Indian female voice",
   },
   {
     id: "meera",
