@@ -7,6 +7,7 @@ import io
 import tempfile
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # Allow uploads up to 20 MB
 CORS(app)  # ✅ Enable CORS for all routes
 
 # Initialize Coqui TTS model once for cloning
